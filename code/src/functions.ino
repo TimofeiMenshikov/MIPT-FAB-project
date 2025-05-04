@@ -16,7 +16,6 @@ void checkBrightness() {
 
     } else {                                      // если светло
       LED_ON = (LED_BRIGHT_MAX);
-
     }
   }
 }
@@ -117,10 +116,6 @@ void modesTick() {
       secs  = now.second();
       mins  = local_mins;
       hrs   = local_hrs;
-
-
-
-
       month = now.month();
       year  = now.year();
       day   = now.day();
@@ -132,14 +127,11 @@ void modesTick() {
       day   = now.day();
       hrs   = now.hour();
       mins  = now.minute();
-    }
-    
+    }  
   }
+
   if (button_back.isSingle()) {    // одинарное нажатие на кнопку
     Serial.println("Single button_back");
-
-
-
     if (mode >= 253) {
 
       switch (mode) {
@@ -199,9 +191,6 @@ void modesTick() {
       }
       
       changeFlag = true;
-    }
-    else if (mode == 255) {
-
     }
   }
 
@@ -275,14 +264,6 @@ void modesTick() {
   if (changeFlag) {
     if (mode >= 240) {
       lcd.clear();
-      lcd.createChar(1, BM);  //Ь
-      lcd.createChar(2, IY);  //Й
-      lcd.createChar(3, DD);  //Д
-      lcd.createChar(4, II);  //И
-      lcd.createChar(5, IA);  //Я
-      lcd.createChar(6, YY);  //Ы
-      lcd.createChar(7, AA);  //Э
-      lcd.createChar(0, ZZ);  //Ж
       lcd.setCursor(0, 0);
     }
     if (mode == 255) {          // Перебираем варианты в главном меню  
@@ -432,32 +413,11 @@ void drawSensors() {
 }
 
 void plotSensorsTick() {
-  if (testTimer(hourPlotTimerD, hourPlotTimer)) {
-    for (byte i = 0; i < 14; i++) {
-      tempHour[i] = tempHour[i + 1];
-      humHour[i] = humHour[i + 1];
-      pressHour[i] = pressHour[i + 1];
-      co2Hour[i] = co2Hour[i + 1];
-    }
-    tempHour[14] = dispTemp;
-    humHour[14] = dispHum;
-    pressHour[14] = dispPres;
-    co2Hour[14] = dispCO2;
-
-    if (PRESSURE) pressHour[14] = dispRain;
-    else pressHour[14] = dispPres;
-  }
-
-  // 1.5 или 2 часовой таймер
+  // таймер
   if (testTimer(dayPlotTimerD, dayPlotTimer)) {
     long averTemp = 0, averHum = 0, averPress = 0, averCO2 = 0; 
 
-    for (byte i = 0; i < 15; i++) {
-      averTemp += tempHour[i];
-      averHum += humHour[i];
-      averPress += pressHour[i];
-      averCO2 += co2Hour[i];
-    }
+
     averTemp /= 15;
     averHum /= 15;
     averPress /= 15;
@@ -474,39 +434,6 @@ void plotSensorsTick() {
     pressDay[14] = averPress;
     co2Day[14] = averCO2;
   }
-
-  // 10 минутный таймер
-  if (testTimer(predictTimerD, predictTimer)) {
-    // тут делаем линейную аппроксимацию для предсказания погоды
-    long averPress = 0;
-    for (byte i = 0; i < 10; i++) {
-      bme.takeForcedMeasurement();
-      averPress += bme.readPressure();
-      delay(1);
-    }
-    averPress /= 10;
-
-    for (byte i = 0; i < 5; i++) {                   // счётчик от 0 до 5 (да, до 5. Так как 4 меньше 5)
-      pressure_array[i] = pressure_array[i + 1];     // сдвинуть массив давлений КРОМЕ ПОСЛЕДНЕЙ ЯЧЕЙКИ на шаг назад
-    }
-    pressure_array[5] = averPress;                   // последний элемент массива теперь - новое давление
-    sumX = 0;
-    sumY = 0;
-    sumX2 = 0;
-    sumXY = 0;
-    for (int i = 0; i < 6; i++) {                    // для всех элементов массива
-      sumX += i;
-      sumY += (long)pressure_array[i];
-      sumX2 += i * i;
-      sumXY += (long)i * pressure_array[i];
-    }
-    a = 0;
-    a = (long)6 * sumXY;                            // расчёт коэффициента наклона приямой
-    a = a - (long)sumX * sumY;
-    a = (float)a / (6 * sumX2 - sumX * sumX);
-    delta = a * 6;      // расчёт изменения давления
-    dispRain = map(delta, -250, 250, 100, -100);    // пересчитать в проценты
-  }
 }
 
 boolean dotFlag;
@@ -522,7 +449,6 @@ void clockTick() {
       }
     }
     if (mins > 59) {        // каждый час
-      // loadClock();        // Обновляем знаки, чтобы русские буквы в днях недели тоже обновились.  
       now = rtc.now();
       secs = now.second();
       mins = now.minute();
@@ -531,18 +457,18 @@ void clockTick() {
       if (hrs > 23) hrs = 0;
       if (mode == 0) drawData();
     }
-    if (DISP_MODE != 0 && mode == 0) {   // Если режим секунд или дни недели по-русски, и 2-х строчные цифры то показывать секунды  
+    if (mode == 0) {   // показывать секунды  
       lcd.setCursor(15, 1);
       if (secs < 10) lcd.print(" ");
       lcd.print(secs);
     }
   }
 
-  if (mode == 0) {                                     // Точки и статус питания   ---------------------------------------------------
+  if (mode == 0) {                // Мигающие точки, разделяющие часы и минуты 
 
     byte code;
     if (dotFlag) code = 165;
-    else code = 32;
+    else         code = 32;
     if (mode0scr == 0) {          // мигание большими точками только в нулевом режиме главного экрана  
       
       lcd.setCursor(7, 0);
