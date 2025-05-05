@@ -128,18 +128,13 @@ byte dispHum;
 int dispPres;
 int dispCO2 = -1;
 
-
-
 // массивы графиков
 int tempDay[15];
 int humDay[15];
 int pressDay[15];
 int co2Day[15];
 
-int delta;
 uint32_t pressure_array[6];
-uint32_t sumX, sumY, sumX2, sumXY;
-float a, b;
 
 /*
   Характеристики датчика BME:
